@@ -1,4 +1,5 @@
 using DotNetAuth.Data;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
@@ -7,17 +8,6 @@ using Swashbuckle.AspNetCore.Filters;
 var builder = WebApplication.CreateBuilder(args);
 
 
-
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowSpecificOrigin",
-        builder =>
-        {
-            builder.WithOrigins("*")
-                .AllowAnyHeader()
-                .AllowAnyMethod();
-        });
-});
 
 // Add services to the container.
 
@@ -28,7 +18,8 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.ConfigureApplicationCookie(options =>
 {
     // Cookie settings
-    options.Cookie.HttpOnly = true;
+    // options.Cookie.HttpOnly = true;
+    options.Cookie.SameSite = SameSiteMode.None;
     options.ExpireTimeSpan = TimeSpan.FromMinutes(10);
 
 });
@@ -49,11 +40,51 @@ builder.Services.AddDbContext<DataContext>(options => {
 });
 
 builder.Services.AddAuthorization();
-builder.Services.AddAuthorizationBuilder()
-    .AddPolicy("api", p =>
+// builder.Services.AddAuthorizationBuilder()
+//     .AddPolicy("api", p =>
+// {
+//     p.AddAuthenticationSchemes(IdentityConstants.BearerScheme);
+//     p.RequireAuthenticatedUser()
+//         .Build();
+// });
+
+
+// builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+//     .AddCookie();
+
+
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.Cookie.HttpOnly = true;
+        options.ExpireTimeSpan = TimeSpan.FromMinutes(30); // Set appropriate expiration time
+        options.SlidingExpiration = true; // Extend expiration on activity
+        options.LoginPath = "/Account/Login"; // Set login page URL
+        options.LogoutPath = "/Account/Logout"; // Set logout page URL
+    });
+//
+// builder.Services.AddCors(options =>
+// {
+//     options.AddPolicy("AllowSpecificOrigin",
+//         builder =>
+//         {
+//             builder.WithOrigins("*")
+//                 .AllowAnyHeader()
+//                 .AllowAnyMethod()
+//                 .AllowCredentials(); // Allow credentials
+//         });
+// });
+builder.Services.AddCors(options =>
 {
-    p.RequireAuthenticatedUser();
-    p.AddAuthenticationSchemes(IdentityConstants.BearerScheme);
+    options.AddPolicy("AllowSpecificOrigin",
+        builder =>
+        {
+            builder.WithOrigins("https://localhost:5173")
+                .AllowCredentials()
+                .AllowAnyHeader()
+                .AllowAnyMethod()
+                ;
+        });
 });
 
 builder.Services.Configure<IdentityOptions>(options =>
@@ -74,7 +105,7 @@ builder.Services.Configure<IdentityOptions>(options =>
     options.SignIn.RequireConfirmedAccount = false;
     options.SignIn.RequireConfirmedEmail = false;
     options.SignIn.RequireConfirmedPhoneNumber = false;
-    
+
     // User settings.
     options.User.AllowedUserNameCharacters =
     "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+";
