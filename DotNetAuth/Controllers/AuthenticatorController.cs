@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace DotNetAuth.Controllers
 {
+    [Authorize]
     [ApiController]
     public class AuthenticatorController : ControllerBase
     {
@@ -16,7 +17,7 @@ namespace DotNetAuth.Controllers
             _userManager = userManager;
         }
 
-        [HttpPost("signOut"), AllowAnonymous]
+        [HttpPost("signOut")]
         public async Task<IActionResult> Logout()
         {
             try
@@ -32,11 +33,22 @@ namespace DotNetAuth.Controllers
                 return BadRequest();
             }
         }
-
+        
         [HttpPost("isSignedIn"), AllowAnonymous]
         public  IActionResult IsSignedIn()
         {
             if (HttpContext.User.Identity.IsAuthenticated)
+            {
+                return Ok();
+            }
+
+            return BadRequest();
+        }
+
+        [HttpGet("hasRole")]
+        public IActionResult HasRole(string role)
+        {
+            if (User.IsInRole(role))
             {
                 return Ok();
             }

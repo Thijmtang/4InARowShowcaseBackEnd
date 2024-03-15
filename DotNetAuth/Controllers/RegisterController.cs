@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace DotNetAuth.Controllers
 {
+    [Authorize]
     [Route("[controller]")]
     [ApiController]
     public class RegisterController : ControllerBase

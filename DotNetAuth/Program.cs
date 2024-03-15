@@ -7,10 +7,7 @@ using Swashbuckle.AspNetCore.Filters;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
-
 // Add services to the container.
-
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -18,7 +15,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.ConfigureApplicationCookie(options =>
 {
     // Cookie settings
-    // options.Cookie.HttpOnly = true;
+    options.Cookie.HttpOnly = true;
     options.Cookie.SameSite = SameSiteMode.None;
     options.ExpireTimeSpan = TimeSpan.FromMinutes(10);
 
@@ -38,6 +35,7 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddDbContext<DataContext>(options => {
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
+
 
 builder.Services.AddAuthorization();
 // builder.Services.AddAuthorizationBuilder()
@@ -97,10 +95,6 @@ builder.Services.Configure<IdentityOptions>(options =>
     // options.Password.RequiredLength = 6;
     // options.Password.RequiredUniqueChars = 1;
     //
-    // // Lockout settings.
-    // options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
-    // options.Lockout.MaxFailedAccessAttempts = 5;
-    // options.Lockout.AllowedForNewUsers = true;
 
     options.SignIn.RequireConfirmedAccount = false;
     options.SignIn.RequireConfirmedEmail = false;
@@ -115,6 +109,7 @@ builder.Services.Configure<IdentityOptions>(options =>
 
 builder.Services
     .AddIdentityApiEndpoints<IdentityUser>()
+    .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<DataContext>();
 
 var app = builder.Build();
@@ -132,8 +127,9 @@ app.UseHttpsRedirection();
 
 app.UseCors("AllowSpecificOrigin");
 
+app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapControllers();
+app.MapControllers().RequireAuthorization();
 
 app.Run();
