@@ -51,14 +51,19 @@ builder.Services.AddAuthorization();
 //     .AddCookie();
 
 
+builder.Services.Configure<IdentityOptions>(options =>
+{
+    options.Tokens.AuthenticatorTokenProvider = TokenOptions.DefaultAuthenticatorProvider;
+});
+
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
         options.Cookie.HttpOnly = true;
         options.ExpireTimeSpan = TimeSpan.FromMinutes(30); // Set appropriate expiration time
         options.SlidingExpiration = true; // Extend expiration on activity
-        options.LoginPath = "/Account/Login"; // Set login page URL
-        options.LogoutPath = "/Account/Logout"; // Set logout page URL
+        // options.LoginPath = "/Account/Login"; // Set login page URL
+        // options.LogoutPath = "/Account/Logout"; // Set logout page URL
     });
 //
 // builder.Services.AddCors(options =>

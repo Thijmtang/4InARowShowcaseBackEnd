@@ -1,4 +1,7 @@
-﻿using Microsoft.AspNetCore.Authentication;
+﻿using System.Data;
+using System.Text;
+using DotNetAuth.Models.DTO;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -24,6 +27,7 @@ namespace DotNetAuth.Controllers
             {
                 // Clear the existing external cookie
                 HttpContext.Response.Cookies.Delete(".AspNetCore.Identity.Application", new CookieOptions { Secure = true });
+                HttpContext.Response.Cookies.Delete("Identity.TwoFactorRememberMe", new CookieOptions { Secure = true });
 
                 return Ok();
 
@@ -48,6 +52,7 @@ namespace DotNetAuth.Controllers
         [HttpGet("hasRole")]
         public IActionResult HasRole(string role)
         {
+            
             if (User.IsInRole(role))
             {
                 return Ok();
@@ -55,6 +60,25 @@ namespace DotNetAuth.Controllers
 
             return BadRequest();
         }
+
+        [HttpGet("UserInfo")]
+        public async Task<IActionResult> GetUserInfo()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            var roles = await _userManager.GetRolesAsync(user);
+
+            var userInfoDTO = new UserInfoDTO()
+            {
+                Username = user.UserName,
+                TwoFactorEnabled = user.TwoFactorEnabled,
+                Roles = roles,
+            };
+
+            return Ok(userInfoDTO);
+        }
+
+
+      
 
 
     }
