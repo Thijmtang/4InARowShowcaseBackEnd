@@ -133,7 +133,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.MapIdentityApi<IdentityUser>();
-app.MapHub<Gamehub>("/Hub");
+app.MapHub<Gamehub>("/Hub").RequireAuthorization();
 
 app.UseHttpsRedirection();
 

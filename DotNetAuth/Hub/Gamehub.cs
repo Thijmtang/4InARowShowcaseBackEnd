@@ -1,15 +1,18 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Text.Json;
+using System.Text.RegularExpressions;
 using DotNetAuth.Models.DTO;
 using DotNetAuth.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.SignalR;
+using Newtonsoft.Json;
+using NuGet.DependencyResolver;
 
 namespace DotNetAuth.Hub
 {
     public class Gamehub : Microsoft.AspNetCore.SignalR.Hub
     {
         private static readonly List<Group> GroupList = new();
-        private static Dictionary<string, GameLobbyDTO> LobbyList = new();
+        private static List<GameLobbyDTO> LobbyList = new();
 
 
         private static GameService _gameService;
@@ -21,10 +24,36 @@ namespace DotNetAuth.Hub
             _userManager = userManager;
         }
 
-        // public async Task JoinLobby(string lobbyCode)
-        // {
 
-        // }   
+
+        public override async Task OnDisconnectedAsync(Exception exception)
+        {
+            // get all lobbies which the current user is connected to
+            var connectedLobbies = LobbyList.FindAll(l => l.GetPlayers().ContainsKey(Context.ConnectionId));
+            foreach (GameLobbyDTO gameLobby in connectedLobbies)
+            {
+                await Groups.RemoveFromGroupAsync(Context.ConnectionId, gameLobby.Code);
+                var players = gameLobby.GetPlayers();
+                // Delete the lobby since the disconnected user is the only one left
+                if (players.Count == 1)
+                {
+                    LobbyList.Remove(gameLobby);
+                    continue;
+                }
+
+                var user = getCurrentPlayer();
+
+                gameLobby.RemovePlayer(Context.ConnectionId);
+
+                await SendGroupAlert(gameLobby.Code, $"{user.Username} heeft de lobby verlaten", "error");
+                await SendAlert($"Je hebt de lobby {gameLobby.Code} verlaten", "error");
+                await UpdateLobbyUsers(players, gameLobby.Code);
+
+            }
+
+            // Call base implementation to ensure disconnection is handled properly
+            await base.OnDisconnectedAsync(exception);
+        }
 
 
         public async Task SendMessage(string user, string message)
@@ -37,76 +66,86 @@ namespace DotNetAuth.Hub
         {
 
             // Genereer unieke group naam;
-            bool unique = !LobbyList.ContainsKey(groupName);
+            bool unique = FindLobby(groupName) == null;
             
             if (!unique)
             {
-            
                 int i = 1;
 
                 string newName = $"{groupName}-{i++}";
 
-
-                while (LobbyList.ContainsKey(newName))
+                while (FindLobby(newName) != null)
                 {
                     newName = $"{groupName}-{i++}";
                 }
 
-
                 groupName = newName;
             }
 
-
             var newLobby = new GameLobbyDTO()
             {
-                GameField = _gameService.GenerateField(),
+                Code = groupName,
             };
 
             // Add player leader
-            // var currentPlayer = getCurrentPlayer();
-            newLobby.AddPlayer(getCurrentPlayer());
+            var currentPlayer = getCurrentPlayer();
+            currentPlayer.JoinDate = new DateTime();
+
+            newLobby.AddPlayer(currentPlayer);
 
             // Save new lobby
-            LobbyList.Add(groupName, newLobby);
-
+            LobbyList.Add(newLobby);
             await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
 
             await SendAlert($"Lobby {groupName} is succesvol aangemaakt!", "success");
+
+            await Clients.Caller.SendAsync("RedirectLobby", JsonConvert.SerializeObject(newLobby, Formatting.Indented));
         }
 
         public async Task JoinLobby(string lobbyName)
         {
-
+            var lobby = FindLobby(lobbyName);
             // Lobby does not exist
-            if (!LobbyList.ContainsKey(lobbyName))
+            if (lobby == null)
             {
                 await SendAlert("Lobby kon niet gevonden worden!", "error");
                 return;
             }
 
+            var players = lobby.GetPlayers();
 
-            var lobby = LobbyList[lobbyName];
-
-            if (lobby.getPlayers().ContainsKey(Context.ConnectionId))
+            if (players.ContainsKey(Context.ConnectionId))
             {
                 await SendAlert("Je zit al in deze lobby!", "error");
-
+                return;
             }
+
             // Lobby full
-            if (lobby.getPlayers().Count >= 2)
+            if (players.Count >= 2)
             {
                 //Geef vage fout melding eventueel
                 await SendAlert("Lobby zit vol!", "error");
                 return;
             }
 
+            // Add user to lobby 
             var user = getCurrentPlayer();
-            lobby.AddPlayer(user);
-
-            // await Clients.Caller.SendAsync("ShowMessage", "It is not your turn", "warning");
-            await Groups.AddToGroupAsync(Context.ConnectionId, lobbyName);
+            user.JoinDate = new DateTime();
 
             await SendGroupAlert(lobbyName, $"{user.Username} has joined the lobby", "success");
+
+            lobby.AddPlayer(user);
+            await Groups.AddToGroupAsync(Context.ConnectionId, lobbyName);
+
+            await Clients.Caller.SendAsync("RedirectLobby", JsonConvert.SerializeObject(lobby));
+
+            await UpdateLobbyUsers(players, lobbyName);
+
+            if (players.Count() == 2)
+            {
+                // Unlock play button for leader
+                await Clients.Group(lobbyName).SendAsync("AllowGameStart");
+            }
         }
 
         public async Task LeaveLobby(string roomName)
@@ -127,6 +166,10 @@ namespace DotNetAuth.Hub
 
         }
 
+        private async Task UpdateLobbyUsers(Dictionary<string, GamePlayerDto> players, string groupName)
+        {
+            await Clients.Groups(groupName).SendAsync("UpdatePlayerList", JsonConvert.SerializeObject(players, Formatting.Indented));
+        }
 
 
         private GamePlayerDto? getCurrentPlayer()
@@ -143,7 +186,14 @@ namespace DotNetAuth.Hub
             return player;
         }
 
-       
+        private GameLobbyDTO FindLobby(string code)
+        {
+            return LobbyList.FirstOrDefault(l => l.Code == code);
+        }
+
+
+
+   
     }
 
 

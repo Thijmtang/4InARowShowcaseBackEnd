@@ -8,9 +8,10 @@
 
     public class GameLobbyDTO
     {
-        public STATUS status { get; set; } = new();
+        public string Code { get; set; }
+        public STATUS Status { get; set; } = new();
 
-        private Dictionary<string, GamePlayerDto> Players { get; set; } = new();
+        private Dictionary<string, GamePlayerDto> Players { get;  set; } = new();
 
         public GamePlayerDto CurrentPlayerTurn { get; set; } = new();
 
@@ -20,7 +21,7 @@
 
         public GameLobbyDTO()
         {
-            this.status = STATUS.STANDBY;
+            this.Status = STATUS.STANDBY;
         }
 
         public void RemovePlayer(string connectionId)
@@ -51,10 +52,11 @@
             Players.Add(player.ConnectionId, player);
         }
 
-        public Dictionary<string, GamePlayerDto> getPlayers()
+        public Dictionary<string, GamePlayerDto> GetPlayers()
         {
-            return Players;
+            return this.Players;
         }
+
 
     }
 }
