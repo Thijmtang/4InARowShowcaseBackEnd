@@ -153,6 +153,23 @@ namespace DotNetAuth.Hub
             await Groups.RemoveFromGroupAsync(Context.ConnectionId, roomName);
         }
 
+        public async Task StartGame(string roomName)
+        {
+            var lobby = FindLobby(roomName);
+
+            var players = lobby.GetPlayers();
+            
+            if (players.Count != 2)
+            {
+                await SendGroupAlert(roomName, "Er is iets fout gegaan", "error");
+                return;
+            }
+
+            lobby.StartGame();
+
+            await Clients.Groups(roomName).SendAsync("RenderField", JsonConvert.SerializeObject(lobby, Formatting.Indented));
+        }
+
 
         private async Task SendAlert(string message, string type)
         {
@@ -163,11 +180,22 @@ namespace DotNetAuth.Hub
         private async Task SendGroupAlert(string groupName, string message, string type)
         {
             await Clients.Group(groupName).SendAsync("FlashAlert", message, type);
+        }
+
+        public async Task ClickCell(string roomName, int x)
+        {
+            var lobby = FindLobby(roomName);
+            lobby.ClickCell(x);
+
+            await Clients.Groups(roomName).SendAsync("RenderField", JsonConvert.SerializeObject(lobby, Formatting.Indented));
+
+            await SendGroupAlert(roomName, "aoiwdouwh gegaan", "error");
 
         }
 
         private async Task UpdateLobbyUsers(Dictionary<string, GamePlayerDto> players, string groupName)
         {
+            // var boeie[][] = new (
             await Clients.Groups(groupName).SendAsync("UpdatePlayerList", JsonConvert.SerializeObject(players, Formatting.Indented));
         }
 
