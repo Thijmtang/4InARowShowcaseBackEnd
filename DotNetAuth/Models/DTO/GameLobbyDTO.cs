@@ -18,9 +18,7 @@ namespace DotNetAuth.Models.DTO
         public string CurrentPlayerTurn { get; set; } = "";
 
         public List<GameCell> GameField { get; set; } = new();
-        public string Player1 { get; set; }
-        public string Player2 { get; set; }
-
+        public string Winner { get; set; }
         public GameLobbyDTO()   
         {
             this.Status = STATUS.STANDBY;
@@ -46,8 +44,6 @@ namespace DotNetAuth.Models.DTO
                 Players[player2.ConnectionId] = player2;
 
             }
-
-
         }
 
         public void AddPlayer(GamePlayerDto player)
@@ -71,7 +67,6 @@ namespace DotNetAuth.Models.DTO
 
             player.PlayerType = type;
             
-
             Players.Add(player.ConnectionId, player);
         }
 
@@ -104,18 +99,27 @@ namespace DotNetAuth.Models.DTO
 
             if (cellsByX.TryGetValue(x, out var cellsWithX))
             {
+
                 var newCell = cellsWithX.Where(c => zeroValueCells.Contains(c)).OrderByDescending(c => c.Y).FirstOrDefault();
                 if (newCell != null)
                 {
-                    // newCell.Value = (int)GetPlayers()[CurrentPlayerTurn].PlayerType;
-                    newCell.Value = 1;
+                    newCell.Value = (int)GetPlayers()[CurrentPlayerTurn].PlayerType;
                     newCell.New = true;
                 }
+
+                if (CheckWin(newCell))
+                {
+                    this.Winner = CurrentPlayerTurn;
+                    this.Status = STATUS.COMPLETED;
+                    Winner = CurrentPlayerTurn;
+                }
+
+                // Toggle turn, reverse search the other player
+                CurrentPlayerTurn = GetPlayers().Values.First(p => p.ConnectionId != CurrentPlayerTurn).ConnectionId;
             }
 
-            // Toggle turn, reverse search the other player
-            CurrentPlayerTurn = GetPlayers().Values.First(p => p.ConnectionId != CurrentPlayerTurn).ConnectionId;
         }
+
 
         public GamePlayerDto GetPlayer(PlayerType type)
         {
@@ -143,33 +147,91 @@ namespace DotNetAuth.Models.DTO
             return gameField;
         }
 
-
-
         public Dictionary<string, GamePlayerDto> GetPlayers()
         {
             return this.Players;
         }
 
-
-        public Dictionary<string, GamePlayerDto> GetPlayersByValue()
+        public bool CheckWin(GameCell placedCell)
         {
-            // string[] players = new string[] {Player1, Player2};
-            // var returndic = new Dictionary<string, GamePlayerDto>();
-            //
-            // foreach (var player in players)
-            // {
-            //     if (player.IsNullOrEmpty())
-            //     {
-            //         continue;
-            //     }
-            //     returndic[]
-            //
-            //
-            // }
+            var horizontalRow = GameField.FindAll(gc => gc.Y == placedCell.Y);
+            var VerticalRow = GameField.FindAll(gc => gc.X == placedCell.X);
+
+            if (CheckSequence(horizontalRow, placedCell) || CheckSequence(VerticalRow, placedCell))
+            {
+                return true;
+            }
+
+            var count = 0;
+
+            // Bottom left to top right diagonal
+            for (int offset = -3; offset <= 3; offset++) // Check the diagonal starting from four positions below to four positions above the placed cell
+            {
+                int x = placedCell.X + offset;
+                int y = placedCell.Y + offset;
+
+                if (!IsInsideBoard(x, y) || !GameField.Exists(gc => gc.X == x && gc.Y == y && gc.Value == placedCell.Value))
+                {
+                    count = 0;
+                    continue;
+                }
+
+                count++;
+
+                if (count == 4)
+                {
+                    return true;
+                }
+            }
+
+            count = 0;
+
+            // Top left to bottom right diagonal
+            for (int offset = -3; offset <= 3; offset++) // Check the diagonal starting from four positions above to four positions below the placed cell
+            {
+                int x = placedCell.X + offset;
+                int y = placedCell.Y - offset;
+
+                if (!IsInsideBoard(x, y) || !GameField.Exists(gc => gc.X == x && gc.Y == y && gc.Value == placedCell.Value))
+                {
+                    count = 0;
+                    continue;
+                }
+
+                count++;
+                if (count == 4)
+                {
+                    return true;
+                }
+            }
 
 
-            return this.Players;
+
+            return false;
         }
 
+        private bool CheckSequence(List<GameCell> sequence, GameCell placedCell)
+        {
+            int count = 0;
+            foreach (var cell in sequence)
+            {
+                if (cell.Value != placedCell.Value)
+                {
+                    count = 0;
+                    continue;
+                }
+                count++;
+                if (count == 4)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private bool IsInsideBoard(int x, int y)
+        {
+            return x >= 0 && x < 8 && y >= 0 && y < 8;
+        }
     }
 }

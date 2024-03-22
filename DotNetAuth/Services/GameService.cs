@@ -23,10 +23,8 @@ namespace DotNetAuth.Services
 
             return gameField;
         }
-        public List<GameCell> clickCell(List<GameCell> field, GameCell clickedCell)
+        public List<GameCell> clickCell(List<GameCell> field, int x)
         {
-            int x = clickedCell.X;
-
             // Group cells by X coordinate for faster lookup
             var cellsByX = field.GroupBy(c => c.X).ToDictionary(g => g.Key, g => g.ToList());
 
@@ -34,7 +32,7 @@ namespace DotNetAuth.Services
             var zeroValueCells = new HashSet<GameCell>(field.Where(c => c.Value == 0));
 
             // Iterate through cells and perform operations
-            foreach (var cell in field)
+            foreach (var cell in field) 
             {
                 cell.New = false;
             }

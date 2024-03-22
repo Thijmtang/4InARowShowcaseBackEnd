@@ -24,8 +24,6 @@ namespace DotNetAuth.Hub
             _userManager = userManager;
         }
 
-
-
         public override async Task OnDisconnectedAsync(Exception exception)
         {
             // get all lobbies which the current user is connected to
@@ -46,6 +44,7 @@ namespace DotNetAuth.Hub
                 gameLobby.RemovePlayer(Context.ConnectionId);
 
                 await SendGroupAlert(gameLobby.Code, $"{user.Username} heeft de lobby verlaten", "error");
+                await Clients.All.SendAsync("Endlobby");
                 await SendAlert($"Je hebt de lobby {gameLobby.Code} verlaten", "error");
                 await UpdateLobbyUsers(players, gameLobby.Code);
 
@@ -55,7 +54,6 @@ namespace DotNetAuth.Hub
             await base.OnDisconnectedAsync(exception);
         }
 
-
         public async Task SendMessage(string user, string message)
         {
             await Clients.All.SendAsync("ReceiveMessage", user, message);
@@ -64,7 +62,6 @@ namespace DotNetAuth.Hub
 
         public async Task CreateLobby(string groupName)
         {
-
             // Genereer unieke group naam;
             bool unique = FindLobby(groupName) == null;
             
@@ -144,7 +141,7 @@ namespace DotNetAuth.Hub
             if (players.Count() == 2)
             {
                 // Unlock play button for leader
-                await Clients.Group(lobbyName).SendAsync("AllowGameStart");
+                await Clients.OthersInGroup(lobbyName).SendAsync("AllowGameStart");
             }
         }
 
@@ -161,13 +158,21 @@ namespace DotNetAuth.Hub
             
             if (players.Count != 2)
             {
-                await SendGroupAlert(roomName, "Er is iets fout gegaan", "error");
+                await SendGroupAlert(roomName, "Er is iets fout gegaan, lobby heeft geen 2 spelers", "error");
+                return;
+            }
+
+            // Not the lobby leader
+            if (players[Context.ConnectionId].PlayerType != PlayerType.Player1)
+            {
+                await SendAlert( "Jij bent niet de lobby leader", "error");
                 return;
             }
 
             lobby.StartGame();
 
             await Clients.Groups(roomName).SendAsync("RenderField", JsonConvert.SerializeObject(lobby, Formatting.Indented));
+            await Clients.Groups(roomName).SendAsync("StartGame");
         }
 
 
@@ -185,14 +190,34 @@ namespace DotNetAuth.Hub
         public async Task ClickCell(string roomName, int x)
         {
             var lobby = FindLobby(roomName);
+
+            if (lobby.Status != STATUS.ONGOING)
+            {
+                return;
+            }
+
+            if (lobby.CurrentPlayerTurn != Context.ConnectionId)
+            {
+                return;
+            }
+
             lobby.ClickCell(x);
 
-            await Clients.Groups(roomName).SendAsync("RenderField", JsonConvert.SerializeObject(lobby, Formatting.Indented));
+            await Clients.Groups(roomName).SendAsync("RenderField", JsonConvert.SerializeObject(lobby));
 
-            await SendGroupAlert(roomName, "aoiwdouwh gegaan", "error");
+            if (lobby.Status == STATUS.COMPLETED)
+            {
+                await Clients.Groups(roomName).SendAsync("ShowChoiceModal");
+            }
 
         }
 
+        /// <summary>
+        /// Sends event which updates the list  of the players within the game lobby
+        /// </summary>
+        /// <param name="players"></param>
+        /// <param name="groupName"></param>
+        /// <returns></returns>
         private async Task UpdateLobbyUsers(Dictionary<string, GamePlayerDto> players, string groupName)
         {
             // var boeie[][] = new (
