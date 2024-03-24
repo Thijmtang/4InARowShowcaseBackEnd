@@ -1,8 +1,11 @@
 using DotNetAuth.Data;
+using DotNetAuth.Hub;
+using DotNetAuth.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using Mono.TextTemplating;
 using Swashbuckle.AspNetCore.Filters;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -11,6 +14,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
+
+builder.Services.AddSignalR();
+builder.Services.AddSingleton<GameService>();
 
 builder.Services.ConfigureApplicationCookie(options =>
 {
@@ -93,13 +99,13 @@ builder.Services.AddCors(options =>
 builder.Services.Configure<IdentityOptions>(options =>
 {
     // // Password settings.
-    // options.Password.RequireDigit = true;
-    // options.Password.RequireLowercase = true;
-    // options.Password.RequireNonAlphanumeric = true;
-    // options.Password.RequireUppercase = true;
-    // options.Password.RequiredLength = 6;
-    // options.Password.RequiredUniqueChars = 1;
-    //
+    options.Password.RequireDigit = true;
+    options.Password.RequireLowercase = true;
+    options.Password.RequireNonAlphanumeric = true;
+    options.Password.RequireUppercase = true;
+    options.Password.RequiredLength = 6;
+    options.Password.RequiredUniqueChars = 1;
+    
 
     options.SignIn.RequireConfirmedAccount = false;
     options.SignIn.RequireConfirmedEmail = false;
@@ -127,6 +133,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.MapIdentityApi<IdentityUser>();
+app.MapHub<Gamehub>("/Hub").RequireAuthorization();
 
 app.UseHttpsRedirection();
 
