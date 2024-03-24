@@ -47,7 +47,6 @@ namespace DotNetAuth.Hub
                 await Clients.All.SendAsync("Endlobby");
                 await SendAlert($"Je hebt de lobby {gameLobby.Code} verlaten", "error");
                 await UpdateLobbyUsers(players, gameLobby.Code);
-
             }
 
             // Call base implementation to ensure disconnection is handled properly
