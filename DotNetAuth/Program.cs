@@ -1,6 +1,5 @@
 using DotNetAuth.Data;
 using DotNetAuth.Hub;
-using DotNetAuth.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -16,7 +15,6 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddSignalR();
-builder.Services.AddSingleton<GameService>();
 
 builder.Services.ConfigureApplicationCookie(options =>
 {

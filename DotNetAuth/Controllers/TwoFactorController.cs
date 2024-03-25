@@ -1,6 +1,5 @@
 ﻿using System.Text.Encodings.Web;
 using DotNetAuth.Models.DTO;
-using DotNetAuth.Services;
 using DotNetAuth.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
