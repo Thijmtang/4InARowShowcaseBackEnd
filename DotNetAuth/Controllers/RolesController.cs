@@ -31,21 +31,30 @@ namespace DotNetAuth.Controllers
         }
 
         [HttpPut("Edit")]
-        public async Task<IActionResult> EditRole(string userId, string role)
+        public async Task<IActionResult> EditRole([FromBody] UserAddRoleDTO userAddRole)
         {
-            var user = await _userManager.FindByIdAsync(userId);
-            
-            bool editable = !await _userManager.IsInRoleAsync(user, "Admin");
-            
-            // Cannot edit a admin user, as an admin @todo add superadmin
-            if (!editable)
+
+            try
             {
-                return BadRequest();
+                var user = await _userManager.FindByIdAsync(userAddRole.userId);
+
+                bool editable = !await _userManager.IsInRoleAsync(user, "Admin");
+
+                // Cannot edit a admin user, as an admin @todo add superadmin
+                if (!editable)
+                {
+                    return BadRequest("Gebruiker is admin!");
+                }
+
+                await _userManager.AddToRoleAsync(user, userAddRole.role);
+                // var roles = _roleManager.;
+                return Ok();
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
             }
 
-            await _userManager.AddToRoleAsync(user, role);
-            // var roles = _roleManager.;
-            return Ok();
         }
     }
 }

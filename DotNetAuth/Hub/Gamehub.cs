@@ -53,12 +53,6 @@ namespace DotNetAuth.Hub
             await base.OnDisconnectedAsync(exception);
         }
 
-        public async Task SendMessage(string user, string message)
-        {
-            await Clients.All.SendAsync("ReceiveMessage", user, message);
-        }
-
-
         public async Task CreateLobby(string groupName)
         {
             // Genereer unieke group naam;
@@ -219,7 +213,6 @@ namespace DotNetAuth.Hub
         /// <returns></returns>
         private async Task UpdateLobbyUsers(Dictionary<string, GamePlayerDto> players, string groupName)
         {
-            // var boeie[][] = new (
             await Clients.Groups(groupName).SendAsync("UpdatePlayerList", JsonConvert.SerializeObject(players, Formatting.Indented));
         }
 

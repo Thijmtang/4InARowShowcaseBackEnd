@@ -206,7 +206,6 @@ namespace DotNetAuth.Models.DTO
             }
 
 
-
             return false;
         }
 
