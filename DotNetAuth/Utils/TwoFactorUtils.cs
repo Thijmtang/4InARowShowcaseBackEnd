@@ -26,12 +26,12 @@ namespace DotNetAuth.Utils
         }
 
 
-        public static string GenerateQrCodeUri(string encodedEmail, string dunno, string unformattedKey)
+        public static string GenerateQrCodeUri(string encodedEmail, string serviceName, string unformattedKey)
         {
             return string.Format(
                 CultureInfo.InvariantCulture,
             AuthenticatorUriFormat,
-                dunno,
+                serviceName,
                 encodedEmail,
                 unformattedKey);
         }

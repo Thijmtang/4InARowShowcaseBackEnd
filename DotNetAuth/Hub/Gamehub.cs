@@ -1,7 +1,7 @@
 ﻿using System.Text.Json;
 using System.Text.RegularExpressions;
+using DotNetAuth.Models;
 using DotNetAuth.Models.DTO;
-using DotNetAuth.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
@@ -12,15 +12,13 @@ namespace DotNetAuth.Hub
     public class Gamehub : Microsoft.AspNetCore.SignalR.Hub
     {
         private static readonly List<Group> GroupList = new();
-        private static List<GameLobbyDTO> LobbyList = new();
+        private static List<GameLobby> LobbyList = new();
 
 
-        private static GameService _gameService;
         private static UserManager<IdentityUser> _userManager;
 
-        public Gamehub(GameService gameService, UserManager<IdentityUser> userManager)
+        public Gamehub(UserManager<IdentityUser> userManager)
         {
-            _gameService = gameService;
             _userManager = userManager;
         }
 
@@ -28,7 +26,7 @@ namespace DotNetAuth.Hub
         {
             // get all lobbies which the current user is connected to
             var connectedLobbies = LobbyList.FindAll(l => l.GetPlayers().ContainsKey(Context.ConnectionId));
-            foreach (GameLobbyDTO gameLobby in connectedLobbies)
+            foreach (GameLobby gameLobby in connectedLobbies)
             {
                 await Groups.RemoveFromGroupAsync(Context.ConnectionId, gameLobby.Code);
                 var players = gameLobby.GetPlayers();
@@ -47,18 +45,11 @@ namespace DotNetAuth.Hub
                 await Clients.All.SendAsync("Endlobby");
                 await SendAlert($"Je hebt de lobby {gameLobby.Code} verlaten", "error");
                 await UpdateLobbyUsers(players, gameLobby.Code);
-
             }
 
             // Call base implementation to ensure disconnection is handled properly
             await base.OnDisconnectedAsync(exception);
         }
-
-        public async Task SendMessage(string user, string message)
-        {
-            await Clients.All.SendAsync("ReceiveMessage", user, message);
-        }
-
 
         public async Task CreateLobby(string groupName)
         {
@@ -79,7 +70,7 @@ namespace DotNetAuth.Hub
                 groupName = newName;
             }
 
-            var newLobby = new GameLobbyDTO()
+            var newLobby = new GameLobby()
             {
                 Code = groupName,
             };
@@ -140,7 +131,7 @@ namespace DotNetAuth.Hub
 
             if (players.Count() == 2)
             {
-                // Unlock play button for leader
+                // Unlock play button for leader (Player 1)
                 await Clients.OthersInGroup(lobbyName).SendAsync("AllowGameStart");
             }
         }
@@ -220,7 +211,6 @@ namespace DotNetAuth.Hub
         /// <returns></returns>
         private async Task UpdateLobbyUsers(Dictionary<string, GamePlayerDto> players, string groupName)
         {
-            // var boeie[][] = new (
             await Clients.Groups(groupName).SendAsync("UpdatePlayerList", JsonConvert.SerializeObject(players, Formatting.Indented));
         }
 
@@ -239,7 +229,7 @@ namespace DotNetAuth.Hub
             return player;
         }
 
-        private GameLobbyDTO FindLobby(string code)
+        private GameLobby FindLobby(string code)
         {
             return LobbyList.FirstOrDefault(l => l.Code == code);
         }

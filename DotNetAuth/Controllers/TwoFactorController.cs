@@ -1,6 +1,5 @@
 ﻿using System.Text.Encodings.Web;
 using DotNetAuth.Models.DTO;
-using DotNetAuth.Services;
 using DotNetAuth.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -43,7 +42,6 @@ namespace DotNetAuth.Controllers
 
             var SharedKey = TwoFactorUtils.FormatKey(key);
             var QrCodeUri = TwoFactorUtils.GenerateQrCodeUri(_urlEncoder.Encode(email), _urlEncoder.Encode("Microsoft.AspNetCore.Identity.UI"), key);
-            // var SharedKey = TwoFactorUtils.FormatKey(key);
 
 
             var twoFactorSecretDTO = new TwoFactorSecretDTO()
@@ -62,7 +60,7 @@ namespace DotNetAuth.Controllers
 
             if (user == null)
             {
-                return NotFound($"Unable to load user with ID '{_userManager.GetUserId(User)}'.");
+                return NotFound($"Oeps er iets fout gegaan");
             }
 
             var verificationCode = factorVerificationCodeDto.Code.Replace(" ", string.Empty).Replace("-", string.Empty);
@@ -73,7 +71,7 @@ namespace DotNetAuth.Controllers
 
             if (!is2faTokenValid)
             {
-                return BadRequest("Token is niet juist!");
+                return BadRequest("Oeps er iets fout gegaan");
             }
 
             await _userManager.SetTwoFactorEnabledAsync(user, true);

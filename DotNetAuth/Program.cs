@@ -1,6 +1,5 @@
 using DotNetAuth.Data;
 using DotNetAuth.Hub;
-using DotNetAuth.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -16,7 +15,6 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddSignalR();
-builder.Services.AddSingleton<GameService>();
 
 builder.Services.ConfigureApplicationCookie(options =>
 {
@@ -71,24 +69,13 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         // options.LoginPath = "/Account/Login"; // Set login page URL
         // options.LogoutPath = "/Account/Logout"; // Set logout page URL
     });
-//
-// builder.Services.AddCors(options =>
-// {
-//     options.AddPolicy("AllowSpecificOrigin",
-//         builder =>
-//         {
-//             builder.WithOrigins("*")
-//                 .AllowAnyHeader()
-//                 .AllowAnyMethod()
-//                 .AllowCredentials(); // Allow credentials
-//         });
-// });
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowSpecificOrigin",
         builder =>
         {
-            builder.WithOrigins("https://localhost:5173")
+            builder.WithOrigins("https://localhost:3000")
                 .AllowCredentials()
                 .AllowAnyHeader()
                 .AllowAnyMethod()

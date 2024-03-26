@@ -1,27 +1,30 @@
-﻿using Microsoft.IdentityModel.Tokens;
+﻿using DotNetAuth.Models.DTO;
+using Microsoft.IdentityModel.Tokens;
 
-namespace DotNetAuth.Models.DTO
+namespace DotNetAuth.Models
 {
-    public enum STATUS {
+    public enum STATUS
+    {
         STANDBY,
         ONGOING,
         COMPLETED,
     }
 
-    public class GameLobbyDTO
+    public class GameLobby
     {
         public string Code { get; set; }
         public STATUS Status { get; set; } = new();
 
-        public Dictionary<string, GamePlayerDto> Players { get;  set; } = new();
+        public Dictionary<string, GamePlayerDto> Players { get; set; } = new();
 
         public string CurrentPlayerTurn { get; set; } = "";
 
         public List<GameCell> GameField { get; set; } = new();
         public string Winner { get; set; }
-        public GameLobbyDTO()   
+        private int placedCell = 0;
+        public GameLobby()
         {
-            this.Status = STATUS.STANDBY;
+            Status = STATUS.STANDBY;
         }
 
         public void RemovePlayer(string connectionId)
@@ -66,7 +69,7 @@ namespace DotNetAuth.Models.DTO
             }
 
             player.PlayerType = type;
-            
+
             Players.Add(player.ConnectionId, player);
         }
 
@@ -79,12 +82,18 @@ namespace DotNetAuth.Models.DTO
 
             Status = STATUS.ONGOING;
             GameField = GenerateField();
+            Winner = "";
+
 
             CurrentPlayerTurn = GetPlayer(PlayerType.Player1).ConnectionId;
         }
 
         public void ClickCell(int x)
         {
+            if (Status != STATUS.ONGOING)
+            {
+                throw new InvalidOperationException("Cannot click cell when the game status is not ongoing.");
+            }
             // Group cells by X coordinate for faster lookup
             var cellsByX = GameField.GroupBy(c => c.X).ToDictionary(g => g.Key, g => g.ToList());
 
@@ -105,13 +114,21 @@ namespace DotNetAuth.Models.DTO
                 {
                     newCell.Value = (int)GetPlayers()[CurrentPlayerTurn].PlayerType;
                     newCell.New = true;
+                    placedCell++;
                 }
 
                 if (CheckWin(newCell))
                 {
-                    this.Winner = CurrentPlayerTurn;
-                    this.Status = STATUS.COMPLETED;
                     Winner = CurrentPlayerTurn;
+                    Status = STATUS.COMPLETED;
+                    Winner = CurrentPlayerTurn;
+                }
+
+                // Draw
+                if (placedCell == GameField.Count)
+                {
+                    Status = STATUS.COMPLETED;
+                
                 }
 
                 // Toggle turn, reverse search the other player
@@ -149,11 +166,16 @@ namespace DotNetAuth.Models.DTO
 
         public Dictionary<string, GamePlayerDto> GetPlayers()
         {
-            return this.Players;
+            return Players;
         }
 
         public bool CheckWin(GameCell placedCell)
         {
+            if (Status == STATUS.COMPLETED)
+            {
+                return true;
+            }
+
             var horizontalRow = GameField.FindAll(gc => gc.Y == placedCell.Y);
             var VerticalRow = GameField.FindAll(gc => gc.X == placedCell.X);
 
@@ -204,7 +226,6 @@ namespace DotNetAuth.Models.DTO
                     return true;
                 }
             }
-
 
 
             return false;
