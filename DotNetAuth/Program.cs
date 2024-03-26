@@ -69,24 +69,13 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         // options.LoginPath = "/Account/Login"; // Set login page URL
         // options.LogoutPath = "/Account/Logout"; // Set logout page URL
     });
-//
-// builder.Services.AddCors(options =>
-// {
-//     options.AddPolicy("AllowSpecificOrigin",
-//         builder =>
-//         {
-//             builder.WithOrigins("*")
-//                 .AllowAnyHeader()
-//                 .AllowAnyMethod()
-//                 .AllowCredentials(); // Allow credentials
-//         });
-// });
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowSpecificOrigin",
         builder =>
         {
-            builder.WithOrigins("https://localhost:5173")
+            builder.WithOrigins("https://localhost:3000")
                 .AllowCredentials()
                 .AllowAnyHeader()
                 .AllowAnyMethod()

@@ -124,10 +124,11 @@ namespace DotNetAuth.Models
                     Winner = CurrentPlayerTurn;
                 }
 
+                // Draw
                 if (placedCell == GameField.Count)
                 {
                     Status = STATUS.COMPLETED;
-
+                
                 }
 
                 // Toggle turn, reverse search the other player

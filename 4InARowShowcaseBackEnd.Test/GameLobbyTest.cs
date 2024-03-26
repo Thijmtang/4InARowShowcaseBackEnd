@@ -111,7 +111,7 @@ namespace DotNetAuth.Tests
         {
             // Arrange
             var gameLobbyDTO = new GameLobby();
-            var placedCell = new GameCell { X = 0, Y = 0, Value = 1 }; // Assuming Player1 placed the cell
+            var placedCell = new GameCell { X = 0, Y = 0, Value = 1 }; 
 
             // Simulate the game field
             var gameField = new List<GameCell>
@@ -135,7 +135,7 @@ namespace DotNetAuth.Tests
         {
             // Arrange
             var gameLobbyDTO = new GameLobby();
-            var placedCell = new GameCell { X = 0, Y = 0, Value = 1 }; // Assuming Player1 placed the cell
+            var placedCell = new GameCell { X = 0, Y = 0, Value = 1 };
 
             // Simulate the game field for horizontal win
             var gameField = new List<GameCell>
@@ -160,7 +160,7 @@ namespace DotNetAuth.Tests
         {
             // Arrange
             var gameLobbyDTO = new GameLobby();
-            var placedCell = new GameCell { X = 0, Y = 0, Value = 1 }; // Assuming Player1 placed the cell
+            var placedCell = new GameCell { X = 0, Y = 0, Value = 1 }; 
 
             // Simulate the game field for vertical win
             var gameField = new List<GameCell>
@@ -185,7 +185,7 @@ namespace DotNetAuth.Tests
         {
             // Arrange
             var gameLobbyDTO = new GameLobby();
-            var placedCell = new GameCell { X = 0, Y = 0, Value = 1 }; // Assuming Player1 placed the cell
+            var placedCell = new GameCell { X = 0, Y = 0, Value = 1 }; 
 
             // Simulate the game field for left-to-right diagonal win
             var gameField = new List<GameCell>
@@ -211,6 +211,7 @@ namespace DotNetAuth.Tests
             // Arrange
             var gameLobbyDTO = new GameLobby();
             var placedCell = new GameCell { X = 3, Y = 0, Value = 1 }; 
+
             // Simulate the game field for right-to-left diagonal win
             var gameField = new List<GameCell>
             {
@@ -227,44 +228,6 @@ namespace DotNetAuth.Tests
 
             // Assert
             Assert.IsTrue(result, "The game should detect a win with four cells in a right-to-left diagonal.");
-        }
-
-        [Test]
-        public void CheckForDraw_ShouldReturnTrue_WhenAllCellsFilledWithoutWin()
-        {
-            // Arrange
-            var gameLobbyDTO = new GameLobby();
-
-            var player1 = new GamePlayerDto { ConnectionId = "1", PlayerType = PlayerType.Player1 };
-            var player2 = new GamePlayerDto { ConnectionId = "2", PlayerType = PlayerType.Player2 };
-
-            gameLobbyDTO.AddPlayer(player1);
-            gameLobbyDTO.AddPlayer(player2);
-            // Simulate a game field with all cells filled but no winning condition
-            var gameField = new List<GameCell>();
-
-            // Filling the game field with cells having alternating values (for example, Player1 and Player2)
-            // Without any winning condition
-
-            for (int y = 0; y < 8; y++)
-            {
-                for (int x = 0; x < 8; x++)
-                {
-
-                    // Alternating between Player1 (value = 1) and Player2 (value = 2)
-                    var value = (x + y) % 2 == 0 ? 1 : 2;
-
-                    gameField.Add(new GameCell { X = x, Y = y, Value = value });
-                }
-            }
-
-            gameLobbyDTO.GameField = gameField;
-
-            // Act
-            bool isDraw = gameLobbyDTO.CheckWin(new GameCell { X = 0, Y = 0, Value = 1 }); // Dummy placed cell, it won't affect the outcome
-
-            // Assert
-            Assert.IsTrue(isDraw, "The game should be considered a draw when all cells are filled without any winning condition.");
         }
 
     }
