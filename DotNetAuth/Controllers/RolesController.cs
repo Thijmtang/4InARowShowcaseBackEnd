@@ -12,8 +12,6 @@ namespace DotNetAuth.Controllers
     [ApiController]
     public class RolesController : ControllerBase
     {
-
-
         private RoleManager<IdentityRole> _roleManager;
         private UserManager<IdentityUser> _userManager;
 

@@ -10,11 +10,11 @@ namespace DotNetAuth.Controllers
     [Authorize(Roles = "Admin")]
     [Route("[controller]")]
     [ApiController]
-    public class User : ControllerBase
+    public class UserController : ControllerBase
     {
         private UserManager<IdentityUser> _userManager;
 
-        public User(UserManager<IdentityUser> userManager)
+        public UserController(UserManager<IdentityUser> userManager)
         {
             _userManager = userManager;
         }

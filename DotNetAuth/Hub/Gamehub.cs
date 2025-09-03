@@ -1,5 +1,4 @@
-﻿using System.Text.Json;
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 using DotNetAuth.Models;
 using DotNetAuth.Models.DTO;
 using Microsoft.AspNetCore.Identity;
@@ -11,7 +10,6 @@ namespace DotNetAuth.Hub
 {
     public class Gamehub : Microsoft.AspNetCore.SignalR.Hub
     {
-        private static readonly List<Group> GroupList = new();
         private static List<GameLobby> LobbyList = new();
 
 
@@ -182,7 +180,7 @@ namespace DotNetAuth.Hub
         {
             var lobby = FindLobby(roomName);
 
-            if (lobby.Status != STATUS.ONGOING)
+            if (lobby.Status != Status.Ongoing)
             {
                 return;
             }
@@ -196,7 +194,7 @@ namespace DotNetAuth.Hub
 
             await Clients.Groups(roomName).SendAsync("RenderField", JsonConvert.SerializeObject(lobby));
 
-            if (lobby.Status == STATUS.COMPLETED)
+            if (lobby.Status == Status.Completed)
             {
                 await Clients.Groups(roomName).SendAsync("ShowChoiceModal");
             }

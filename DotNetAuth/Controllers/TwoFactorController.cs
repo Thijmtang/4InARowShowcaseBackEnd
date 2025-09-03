@@ -1,4 +1,5 @@
 ﻿using System.Text.Encodings.Web;
+using DotNetAuth.Models;
 using DotNetAuth.Models.DTO;
 using DotNetAuth.Utils;
 using Microsoft.AspNetCore.Authorization;
@@ -16,11 +17,16 @@ namespace DotNetAuth.Controllers
 
         private UserManager<IdentityUser> _userManager;
         private UrlEncoder _urlEncoder;
-        public TwoFactorController(UserManager<IdentityUser> userManager, UrlEncoder urlEncoder)
-        {
+        private readonly AuthService _authService;
+
+        public TwoFactorController(
+            UserManager<IdentityUser> userManager,
+            UrlEncoder urlEncoder,
+            AuthService authService
+            ) {
             _userManager = userManager;
             _urlEncoder = urlEncoder;
-
+            _authService = authService;
         }
 
         [HttpGet("secret")]
@@ -75,8 +81,7 @@ namespace DotNetAuth.Controllers
             }
 
             await _userManager.SetTwoFactorEnabledAsync(user, true);
-            var userId = await _userManager.GetUserIdAsync(user);
-
+            
             return Ok();
         }
 

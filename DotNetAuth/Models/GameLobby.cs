@@ -1,19 +1,18 @@
 ﻿using DotNetAuth.Models.DTO;
-using Microsoft.IdentityModel.Tokens;
 
 namespace DotNetAuth.Models
 {
-    public enum STATUS
+    public enum Status
     {
-        STANDBY,
-        ONGOING,
-        COMPLETED,
+        Standby,
+        Ongoing,
+        Completed,
     }
 
     public class GameLobby
     {
         public string Code { get; set; }
-        public STATUS Status { get; set; } = new();
+        public Status Status { get; set; }
 
         public Dictionary<string, GamePlayerDto> Players { get; set; } = new();
 
@@ -24,7 +23,7 @@ namespace DotNetAuth.Models
         private int placedCell = 0;
         public GameLobby()
         {
-            Status = STATUS.STANDBY;
+            Status = Status.Standby;
         }
 
         public void RemovePlayer(string connectionId)
@@ -80,7 +79,7 @@ namespace DotNetAuth.Models
                 throw new Exception("Niet genoeg spelers in lobby");
             }
 
-            Status = STATUS.ONGOING;
+            Status = Status.Ongoing;
             GameField = GenerateField();
             Winner = "";
 
@@ -90,7 +89,7 @@ namespace DotNetAuth.Models
 
         public void ClickCell(int x)
         {
-            if (Status != STATUS.ONGOING)
+            if (Status != Status.Ongoing)
             {
                 throw new InvalidOperationException("Cannot click cell when the game status is not ongoing.");
             }
@@ -120,14 +119,14 @@ namespace DotNetAuth.Models
                 if (CheckWin(newCell))
                 {
                     Winner = CurrentPlayerTurn;
-                    Status = STATUS.COMPLETED;
+                    Status = Status.Completed;
                     Winner = CurrentPlayerTurn;
                 }
 
                 // Draw
                 if (placedCell == GameField.Count)
                 {
-                    Status = STATUS.COMPLETED;
+                    Status = Status.Completed;
                 
                 }
 
@@ -171,7 +170,7 @@ namespace DotNetAuth.Models
 
         public bool CheckWin(GameCell placedCell)
         {
-            if (Status == STATUS.COMPLETED)
+            if (Status == Status.Completed)
             {
                 return true;
             }

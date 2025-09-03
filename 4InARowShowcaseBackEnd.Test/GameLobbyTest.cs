@@ -82,7 +82,7 @@ namespace DotNetAuth.Tests
             lobby.StartGame();
 
             // Assert
-            Assert.AreEqual(STATUS.ONGOING, lobby.Status);
+            Assert.AreEqual(Status.Ongoing, lobby.Status);
             Assert.IsNotNull(lobby.GameField);
             Assert.IsNotEmpty(lobby.CurrentPlayerTurn);
         }

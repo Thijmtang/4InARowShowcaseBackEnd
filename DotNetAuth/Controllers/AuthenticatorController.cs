@@ -1,5 +1,7 @@
 ﻿using System.Data;
+using System.Security.Claims;
 using System.Text;
+using DotNetAuth.Models;
 using DotNetAuth.Models.DTO;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -7,79 +9,93 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 
 namespace DotNetAuth.Controllers
 {
+    [Route("api/auth")]
     [Authorize]
     [ApiController]
     public class AuthenticatorController : ControllerBase
     {
         private UserManager<IdentityUser> _userManager;
-        public AuthenticatorController(UserManager<IdentityUser> userManager)
+        private readonly AuthService _authService;
+
+        public AuthenticatorController(UserManager<IdentityUser> userManager, AuthService authService)
         {
             _userManager = userManager;
+            _authService = authService;
         }
 
-        [HttpPost("signOut")]
-        public async Task<IActionResult> Logout()
+        [AllowAnonymous]
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] LoginUserDto model)
         {
-            try
-            {
-                // Clear the existing external cookie
-                HttpContext.Response.Cookies.Delete(".AspNetCore.Identity.Application", new CookieOptions { Secure = true });
-                HttpContext.Response.Cookies.Delete("Identity.TwoFactorRememberMe", new CookieOptions { Secure = true });
-
-                return Ok();
-
-            }
-            catch (Exception e)
+            var user = await _userManager.FindByEmailAsync(model.Email);
+            
+            // User does not exist
+            if (user == null)
             {
                 return BadRequest();
             }
-        }
-        
-        [HttpPost("isSignedIn"), AllowAnonymous]
-        public  IActionResult IsSignedIn()
-        {
-            if (HttpContext.User.Identity.IsAuthenticated)
+
+            var result = await _userManager.CheckPasswordAsync(user, model.Password);
+
+            // Invalid credentials
+            if (!result)
             {
-                return Ok();
+                return BadRequest();
             }
 
-            return BadRequest();
-        }
-
-        [HttpGet("hasRole")]
-        public IActionResult HasRole(string role)
-        {
-            
-            if (User.IsInRole(role))
+            // User has enabled two factor authentication, we need to do addition checks
+            if (user.TwoFactorEnabled)
             {
-                return Ok();
+                if (model.TwoFactorCode.IsNullOrEmpty() )
+                {
+                    return BadRequest(new { detail = "RequiresTwoFactor" });
+                }
+
+                var is2faTokenValid = await _userManager.VerifyTwoFactorTokenAsync(
+                    user, _userManager.Options.Tokens.AuthenticatorTokenProvider, model.TwoFactorCode);
+
+                // Invalid 2FA code
+                if (!is2faTokenValid && user.TwoFactorEnabled)
+                {
+                    return BadRequest();
+                }
             }
 
-            return BadRequest();
+            var userDto = new User(
+                Id: Guid.Parse(user.Id),
+                Username: user.UserName,
+                Email: user.Email,
+                Roles: await _userManager.GetRolesAsync(user)
+            );
+
+            var token = await _authService.CreateJwt(userDto);
+
+            return Ok(token);
         }
 
-        [HttpGet("UserInfo")]
-        public async Task<IActionResult> GetUserInfo()
+        /// <summary>
+        /// Route which utilises the ASP.NET Core Identity Two Factor Authentication, to see if the token is still valid
+        /// </summary>
+        [HttpGet("token/verify")]
+        [Authorize]
+        public async Task<IActionResult> VerifyToken()
         {
             var user = await _userManager.GetUserAsync(User);
-            var roles = await _userManager.GetRolesAsync(user);
 
-            var userInfoDTO = new UserInfoDTO()
-            {
-                Username = user.UserName,
-                TwoFactorEnabled = user.TwoFactorEnabled,
-                Roles = roles,
-            };
+            var userDto = new User(
+                Id: Guid.Parse(user.Id),
+                Username: user.UserName,
+                Email: user.Email,
+                Roles: await _userManager.GetRolesAsync(user)
+            );
 
-            return Ok(userInfoDTO);
+            var token = await _authService.CreateJwt(userDto);
+
+            return Ok(token);
         }
-
-
-      
-
-
     }
 }
