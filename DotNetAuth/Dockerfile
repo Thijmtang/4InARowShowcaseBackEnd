@@ -1,27 +1,20 @@
-﻿# Use .NET 8 SDK for ARM64 (needed for EF tools)
-FROM mcr.microsoft.com/dotnet/sdk:8.0-focal-arm64v8 AS build
-WORKDIR /source
-
-# Copy project file and restore dependencies
-COPY *.csproj .
-RUN dotnet restore
-
-# Copy source code and publish
-COPY . .
-RUN dotnet publish -c Release -o /app/publish --no-restore
-
-# Use SDK again for runtime to run EF migrations
-FROM mcr.microsoft.com/dotnet/sdk:8.0-focal-arm64v8 AS runtime
+﻿# Use .NET 8 SDK to build the application
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+# Set the working directory
 WORKDIR /app
-
-# Copy published app
-COPY --from=build /app/publish .
-
-# Expose port
+# Copy the project files
+COPY . .
+# Restore and build the project
+RUN dotnet restore
+RUN dotnet publish -c Release -o out
+# Final stage: run the application using the ASP.NET Core runtime
+FROM mcr.microsoft.com/dotnet/aspnet:8.0
+WORKDIR /app
+COPY --from=build /app/out .
+# Expose port 80 for the application
 EXPOSE 8080
+# Set the application to listen on IPv4 only
+ENV ASPNETCORE_URLS=http://0.0.0.0:8080
+# Run the application
 
-# Set environment to Production
-ENV ASPNETCORE_ENVIRONMENT=Production
-
-# Run EF Core migrations and start app
-CMD dotnet ef database update && dotnet DotNetAuth.dll
+ENTRYPOINT ["dotnet", "DotNetAuth.dll"]

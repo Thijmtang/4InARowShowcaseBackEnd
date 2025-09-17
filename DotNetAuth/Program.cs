@@ -106,19 +106,24 @@ builder.Services.AddDbContext<DataContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // CORS
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowSpecificOrigin",
-        policy =>
-        {
-            policy.WithOrigins("http://localhost:3000") // React dev server
-                  .AllowAnyHeader()
-                  .AllowAnyMethod()
-                  .AllowCredentials();
-        });
-});
+// builder.Services.AddCors(options =>
+// {
+//     options.AddPolicy("AllowSpecificOrigin",
+//         policy =>
+//         {
+//             policy.WithOrigins("http://localhost:3000") // React dev server
+//                   .AllowAnyHeader()
+//                   .AllowAnyMethod()
+//                   .AllowCredentials();
+//         });
+// });
 
 builder.Services.AddAuthorization();
+
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.ListenAnyIP(8080); // match container EXPOSE 8080
+});
 
 var app = builder.Build();
 
@@ -142,5 +147,12 @@ app.MapControllers().RequireAuthorization();
 
 // Map SignalR hub
 app.MapHub<Gamehub>("/Hub").RequireAuthorization();
+
+// Run migrations
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<DataContext>();
+    db.Database.Migrate();
+}
 
 app.Run();

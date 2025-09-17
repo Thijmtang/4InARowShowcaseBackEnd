@@ -10,12 +10,14 @@ COPY DotNetAuth/*.csproj ./DotNetAuth/
 WORKDIR /source/DotNetAuth
 RUN dotnet restore
 
-# Installeer Git vóór je build-dependencies
+# Install Git for build dependencies
 RUN apt-get update && apt-get install -y git
 
-# Copy the rest of the source code and publish the app
-COPY DotNetAuth/. ./DotNetAuth/
-RUN dotnet publish  /app --no-restore
+# Copy the rest of the source code
+COPY DotNetAuth/. .
+
+# Publish the app to /app directory
+RUN dotnet publish -c Release -o /app --no-restore
 
 # Use the .NET Runtime for the final image
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
@@ -23,7 +25,8 @@ WORKDIR /app
 COPY --from=build /app ./
 
 # Expose the API port (default is 80)
-EXPOSE 80
+ENV ASPNETCORE_URLS=http://+:8080
+EXPOSE 8080
 
 # Run the application
-ENTRYPOINT ["dotnet", "DotNetAuth.dll"]
+ENTRYPOINT ["sh", "-c", "dotnet ef database update && dotnet DotNetAuth.dll"]
